@@ -1,0 +1,40 @@
+plugins {
+    id "com.android.application"
+}
+
+def buildNumber = (System.getenv("VERSION_CODE") ?: "1").toInteger()
+
+android {
+    namespace "kr.wisequotes.app"
+    compileSdk 35
+
+    defaultConfig {
+        applicationId "kr.wisequotes.app"
+        minSdk 24
+        targetSdk 35
+        versionCode buildNumber
+        versionName "1.0.${buildNumber}"
+    }
+
+    signingConfigs {
+        // 개인 설치용 고정 서명키. 같은 키로 서명해야 새 버전을 덮어 설치(업데이트)할 수 있습니다.
+        release {
+            storeFile file("release.keystore")
+            storePassword "wisequotes2026"
+            keyAlias "wisequotes"
+            keyPassword "wisequotes2026"
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}

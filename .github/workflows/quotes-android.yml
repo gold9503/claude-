@@ -1,0 +1,48 @@
+name: Build Quotes APK
+
+on:
+  push:
+    branches: [main, ccr-9d79ce7d-cedbfw]
+    paths:
+      - "quotes-app/**"
+      - ".github/workflows/quotes-android.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.14.3"
+      - name: Build release APK
+        working-directory: quotes-app
+        env:
+          VERSION_CODE: ${{ github.run_number }}
+        run: |
+          gradle assembleRelease --no-daemon --stacktrace
+          cp app/build/outputs/apk/release/app-release.apk ../wise-quotes.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wise-quotes-apk
+          path: wise-quotes.apk
+      # 고정 태그(quotes-latest)에 덮어써서 다운로드 주소가 항상 같도록 함
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: quotes-latest
+          name: 기다림의 명언 (최신 버전)
+          make_latest: false
+          overwrite_files: true
+          files: wise-quotes.apk
+          body: |
+            기다리는 동안 명언을 무작위로 보여주고 클래식 음악을 틀어주는 안드로이드 앱
+            휴대폰에서 아래 **wise-quotes.apk** 를 눌러 다운로드 → 설치하세요.
