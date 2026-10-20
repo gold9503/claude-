@@ -1,0 +1,16 @@
+{
+  "name": "경북북부 골프날씨",
+  "short_name": "골프날씨",
+  "description": "경북 북부 골프장별 거리·날씨·그린피",
+  "lang": "ko",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#166534",
+  "theme_color": "#166534",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

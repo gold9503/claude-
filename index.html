@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#166534">
+  <title>경북북부 골프날씨</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="title-row">
+      <h1>⛳ 경북북부 골프날씨</h1>
+      <button id="refreshBtn" class="icon-btn" aria-label="새로고침">⟳</button>
+    </div>
+    <p id="locStatus" class="sub">현재 위치 확인 중…</p>
+    <div class="controls">
+      <label>정렬
+        <select id="sortSel">
+          <option value="distance">가까운 순</option>
+          <option value="weather">라운드 적합도 순</option>
+          <option value="feeWeekday">주중 그린피 낮은 순</option>
+          <option value="feeWeekend">주말 그린피 낮은 순</option>
+          <option value="name">이름 순</option>
+        </select>
+      </label>
+      <label>지역
+        <select id="regionSel"><option value="">전체</option></select>
+      </label>
+    </div>
+    <button id="installBtn" class="install" hidden>📲 홈 화면에 앱 설치</button>
+  </header>
+
+  <main id="list" class="list"></main>
+
+  <footer class="foot">
+    날씨: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> ·
+    거리는 직선거리입니다 · 그린피는 참고용이며 카드에서 눌러 수정할 수 있습니다
+  </footer>
+
+  <dialog id="feeDlg">
+    <form method="dialog" class="fee-form">
+      <h3 id="feeDlgTitle">그린피 수정</h3>
+      <label>주중 (원)<input id="feeWd" type="number" inputmode="numeric" step="1000" min="0"></label>
+      <label>주말 (원)<input id="feeWe" type="number" inputmode="numeric" step="1000" min="0"></label>
+      <div class="dlg-btns">
+        <button value="reset" class="ghost">기본값</button>
+        <button value="cancel" class="ghost">취소</button>
+        <button value="save" class="primary">저장</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="courses.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
