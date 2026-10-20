@@ -306,7 +306,8 @@
     $("#installBtn").hidden = true;
   });
 
-  if ("serviceWorker" in navigator) {
+  const inAndroidApp = navigator.userAgent.includes("GolfWeatherApp"); // APK(WebView) 안에서 실행 중
+  if ("serviceWorker" in navigator && !inAndroidApp) {
     window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
   }
 

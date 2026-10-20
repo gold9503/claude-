@@ -1,0 +1,44 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [main, ccr-d649d7a0-8xvyz6]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.14.3"
+      - name: Build release APK
+        working-directory: android
+        env:
+          VERSION_CODE: ${{ github.run_number }}
+        run: |
+          gradle assembleRelease --no-daemon --stacktrace
+          cp app/build/outputs/apk/release/app-release.apk ../golf-weather.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: golf-weather-apk
+          path: golf-weather.apk
+      - name: Publish release (latest APK)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: 골프날씨 v1.0.${{ github.run_number }}
+          make_latest: true
+          target_commitish: ${{ github.sha }}
+          files: golf-weather.apk
+          body: |
+            경북북부 골프날씨 안드로이드 앱
+            휴대폰에서 아래 **golf-weather.apk** 를 눌러 다운로드 → 설치하세요.
