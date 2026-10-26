@@ -1,0 +1,587 @@
+<title>부조금 장부</title>
+<style id="pg-style">
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&family=Noto+Sans+KR:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+/* 장부형 레이아웃: 요약 타일 → 도구 막대 → 그룹 탭 → 명단 표 */
+:root{
+  --bg:#F1F2EA; --surface:#FFFFFF; --surface-2:#E7E9DD;
+  --ink:#20261F; --ink-soft:#5B6358; --ink-faint:#8A9184;
+  --line:#DADDCE; --line-soft:#E7E9DD;
+  --accent-in:#1F6F5C; --accent-in-soft:#DCEEE7;
+  --accent-out:#A0602A; --accent-out-soft:#F3E4D3;
+  --negative:#B23B3B; --new:#3D5BA8; --new-soft:#E1E7F6; --on-ink:#F1F2EA;
+  --shadow:0 1px 2px rgba(32,38,31,.06),0 8px 24px -12px rgba(32,38,31,.18);
+  --radius:14px;
+  --f-display:'Noto Serif KR',serif; --f-body:'Noto Sans KR',-apple-system,sans-serif; --f-num:'JetBrains Mono',ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#14170F; --surface:#1C2117; --surface-2:#242B1D;
+  --ink:#EAEEE2; --ink-soft:#AAB39C; --ink-faint:#78806E;
+  --line:#333C29; --line-soft:#2A3122;
+  --accent-in:#57C4A2; --accent-in-soft:#1E332C;
+  --accent-out:#E0A05C; --accent-out-soft:#372A1C;
+  --negative:#E17E7E; --new:#8FA8EE; --new-soft:#232C44; --on-ink:#0E120C;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px -14px rgba(0,0,0,.6); color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#14170F; --surface:#1C2117; --surface-2:#242B1D;
+  --ink:#EAEEE2; --ink-soft:#AAB39C; --ink-faint:#78806E;
+  --line:#333C29; --line-soft:#2A3122;
+  --accent-in:#57C4A2; --accent-in-soft:#1E332C;
+  --accent-out:#E0A05C; --accent-out-soft:#372A1C;
+  --negative:#E17E7E; --new:#8FA8EE; --new-soft:#232C44; --on-ink:#0E120C;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px -14px rgba(0,0,0,.6); color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 96px}
+.wrap{max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+header.page{display:flex;flex-direction:column;gap:6px}
+.eyebrow{font-size:12.5px;letter-spacing:.14em;color:var(--ink-faint);font-weight:600}
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(26px,5vw,34px);margin:0;letter-spacing:-.01em;text-wrap:balance}
+.sub{color:var(--ink-soft);font-size:14.5px;line-height:1.6;max-width:60ch;margin:0}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media (max-width:560px){.tiles{grid-template-columns:1fr}}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:6px}
+.tile .label{font-size:12.5px;color:var(--ink-soft);font-weight:600}
+.tile .value{font-family:var(--f-num);font-weight:600;font-size:21px;font-variant-numeric:tabular-nums}
+.value.in{color:var(--accent-in)} .value.out{color:var(--accent-out)} .value.pos{color:var(--accent-in)} .value.neg{color:var(--negative)}
+
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.search{flex:1 1 220px;position:relative;min-width:0}
+.search input{width:100%;padding:11px 12px 11px 36px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:15px;font-family:inherit}
+.search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);opacity:.5}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:10px 14px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:600 14px var(--f-body);cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--ink-soft)}
+.btn.primary{background:var(--accent-in);border-color:var(--accent-in);color:var(--on-ink)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.ghost{background:transparent}
+.btn.danger{color:var(--negative);border-color:var(--negative);background:transparent}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+:focus-visible{outline:2px solid var(--accent-in);outline-offset:2px}
+
+.tabs{display:flex;gap:4px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:0 0 auto;padding:8px 13px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);font:600 13.5px var(--f-body);cursor:pointer;white-space:nowrap}
+.tab:hover{border-color:var(--accent-in)}
+.tab.active{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.tab.new-tab{color:var(--new);border-color:var(--new)}
+.tab.new-tab.active{background:var(--new);color:var(--surface)}
+
+.group-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;min-width:0}
+.group-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:16px 18px 12px}
+.group-title{font-family:var(--f-display);font-weight:700;font-size:17px}
+.group-count{font-size:12.5px;color:var(--ink-faint)}
+.mini-bar{margin:0 18px 14px}
+.mini-bar .track{height:8px;border-radius:999px;background:var(--surface-2);overflow:hidden;display:flex}
+.mini-bar .in{background:var(--accent-in)} .mini-bar .out{background:var(--accent-out)}
+.mini-bar .legend{display:flex;justify-content:space-between;margin-top:6px;font:600 12px var(--f-num);font-variant-numeric:tabular-nums}
+.legend .in-label{color:var(--accent-in)} .legend .out-label{color:var(--accent-out)}
+.table-scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+thead th{background:var(--surface);text-align:right;font-size:11.5px;letter-spacing:.04em;color:var(--ink-faint);font-weight:600;padding:8px 14px;border-bottom:1px solid var(--line);cursor:pointer;user-select:none;white-space:nowrap}
+thead th.l{text-align:left}
+tbody td{padding:9px 14px;border-bottom:1px solid var(--line-soft);text-align:right;font-family:var(--f-num);font-variant-numeric:tabular-nums;white-space:nowrap}
+tbody tr.person:hover{background:var(--surface-2)}
+td.name-cell{text-align:left;font-family:var(--f-body);font-weight:600;cursor:pointer}
+td.group-cell{text-align:left;font-family:var(--f-body);color:var(--ink-soft);font-size:12.5px}
+td.in-val{color:var(--accent-in)} td.out-val{color:var(--accent-out)}
+td.pos{color:var(--accent-in);font-weight:600} td.neg{color:var(--negative);font-weight:600} td.zero{color:var(--ink-faint)}
+.badge{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:999px;font:700 10.5px var(--f-body);background:var(--new-soft);color:var(--new);vertical-align:2px}
+mark{background:var(--new-soft);color:inherit;border-radius:3px;padding:0 1px}
+tr.detail td{background:var(--surface-2);text-align:left;font-family:var(--f-body);padding:10px 14px 14px;white-space:normal}
+.tx-list{display:flex;flex-direction:column;gap:6px}
+.tx{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px}
+.chip{display:inline-flex;align-items:baseline;gap:5px;padding:3px 9px;border-radius:999px;font-size:12px}
+.chip.in{background:var(--accent-in-soft);color:var(--accent-in)} .chip.out{background:var(--accent-out-soft);color:var(--accent-out)}
+.chip b{font-family:var(--f-num);font-weight:600}
+.tx .meta{color:var(--ink-faint);font-size:12px}
+.tx .del{margin-left:auto;border:0;background:none;color:var(--ink-faint);font:600 12px var(--f-body);cursor:pointer;padding:4px 6px;border-radius:6px}
+.tx .del:hover{color:var(--negative);background:var(--surface)}
+.detail-actions{margin-top:10px}
+tfoot td{padding:10px 14px;border-top:2px solid var(--line);font-weight:700;font-family:var(--f-num);font-variant-numeric:tabular-nums;text-align:right}
+tfoot td.name-cell{font-family:var(--f-display);text-align:left}
+.empty-msg{padding:28px 18px;text-align:center;color:var(--ink-faint);font-size:13.5px;line-height:1.7}
+.footnote{font-size:12px;color:var(--ink-faint);text-align:center;line-height:1.7;margin:0}
+
+.savebar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--ink);color:var(--bg);padding:12px max(16px,env(safe-area-inset-right,0px)) calc(12px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.savebar .in-bar{max-width:880px;margin:0 auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.savebar .msg{flex:1 1 200px;font-size:14px;font-weight:500}
+.savebar .btn{border-color:var(--bg)}
+.savebar .btn.ghost{color:var(--bg)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(130px + env(safe-area-inset-bottom,0px));z-index:30;background:var(--surface);color:var(--ink);border:1px solid var(--line);box-shadow:var(--shadow);padding:10px 16px;border-radius:10px;font-size:14px;max-width:calc(100% - 32px)}
+.notice{background:var(--accent-out-soft);color:var(--ink);border-radius:10px;padding:10px 14px;font-size:13.5px;line-height:1.6}
+
+dialog{border:1px solid var(--line);border-radius:16px;background:var(--surface);color:var(--ink);padding:0;width:min(480px,calc(100% - 32px));box-shadow:var(--shadow)}
+dialog::backdrop{background:rgba(10,12,8,.45)}
+.dlg{display:flex;flex-direction:column;gap:14px;padding:20px}
+.dlg h2{margin:0;font-family:var(--f-display);font-size:19px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label,.field .lbl{font-size:12.5px;font-weight:600;color:var(--ink-soft)}
+.field input,.field select{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:15px var(--f-body)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg label{text-align:center;padding:10px;cursor:pointer;font-weight:600;color:var(--ink-soft);font-size:14px}
+.seg input:checked+label.in{background:var(--accent-in-soft);color:var(--accent-in)}
+.seg input:checked+label.out{background:var(--accent-out-soft);color:var(--accent-out)}
+.seg input:focus-visible+label{outline:2px solid var(--accent-in);outline-offset:-2px}
+.quick{display:flex;gap:6px;flex-wrap:wrap}
+.quick button{padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);font:600 12.5px var(--f-num);cursor:pointer}
+.quick button:hover{border-color:var(--accent-in);color:var(--accent-in)}
+.hint{font-size:12.5px;color:var(--ink-faint);line-height:1.5;min-height:1em}
+.hint.known{color:var(--accent-in)}
+.err{font-size:13px;color:var(--negative)}
+.dlg-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+@media (max-width:420px){.row2{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<meta name="claude:viewport-fit-sides" content="cover">
+<div id="app"></div>
+<template id="pg-shell">
+<div class="wrap">
+  <header class="page">
+    <div class="eyebrow" id="asof">부조금 현황판</div>
+    <h1>부조금 장부</h1>
+    <p class="sub">그룹별로 받은 돈(입)과 보낸 돈(출)을 정리했습니다. 이름을 누르면 경조사별 내역이 열리고, 새 내역은 오른쪽 위 버튼으로 추가할 수 있어요.</p>
+  </header>
+  <div class="tiles">
+    <div class="tile"><span class="label">총 받은 금액 (입)</span><span class="value in" id="tile-in">-</span></div>
+    <div class="tile"><span class="label">총 보낸 금액 (출)</span><span class="value out" id="tile-out">-</span></div>
+    <div class="tile"><span class="label">순액 (입 − 출)</span><span class="value" id="tile-net">-</span></div>
+  </div>
+  <div class="notice" id="ro-notice" hidden>이 화면은 읽기 전용이라 추가한 내역이 저장되지 않아요. 장부 주인 계정으로 열어 주세요.</div>
+  <div class="toolbar">
+    <div class="search">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="search-input" type="search" placeholder="이름·그룹·경조사로 검색" autocomplete="off">
+    </div>
+    <button class="btn primary" id="btn-add" type="button">＋ 새 내역 추가</button>
+    <button class="btn" id="btn-export" type="button">엑셀로 받기</button>
+    <button class="btn ghost" id="btn-import" type="button">엑셀 불러오기</button>
+    <input type="file" id="file-import" accept=".xlsx,.xls,.csv" hidden>
+  </div>
+  <div class="tabs" id="tabs"></div>
+  <div class="group-card">
+    <div class="group-head"><div class="group-title" id="group-title">전체</div><div class="group-count" id="group-count"></div></div>
+    <div class="mini-bar" id="group-bar"></div>
+    <div class="table-scroll"><table id="table"><thead><tr id="thead-row"></tr></thead><tbody id="tbody"></tbody><tfoot><tr id="tfoot-row"></tr></tfoot></table></div>
+    <div class="empty-msg" id="empty-msg" hidden></div>
+  </div>
+  <p class="footnote">받은 돈(입) = 내 경조사 때 그 사람이 준 돈 · 보낸 돈(출) = 그 사람 경조사 때 내가 준 돈<br>「엑셀로 받기」를 누르면 지금까지의 모든 내역이 엑셀 파일로 저장됩니다.</p>
+</div>
+
+<div class="savebar" id="savebar" hidden>
+  <div class="in-bar">
+    <span class="msg" id="savebar-msg"></span>
+    <button class="btn ghost" id="btn-discard" type="button">취소</button>
+    <button class="btn primary" id="btn-save" type="button">장부에 저장</button>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<dialog id="dlg-add">
+  <form class="dlg" id="form-add" novalidate>
+    <h2>새 내역 추가</h2>
+    <div class="field">
+      <label for="f-name">이름</label>
+      <input id="f-name" list="dl-names" autocomplete="off" placeholder="예: 홍길동">
+      <div class="hint" id="f-name-hint"></div>
+    </div>
+    <div class="field">
+      <label for="f-group">그룹</label>
+      <select id="f-group"></select>
+      <input id="f-group-new" placeholder="새 그룹 이름" hidden>
+    </div>
+    <div class="field">
+      <span class="lbl">구분</span>
+      <div class="seg">
+        <input type="radio" name="f-dir" id="f-dir-in" value="in" checked><label for="f-dir-in" class="in">받음 (입)</label>
+        <input type="radio" name="f-dir" id="f-dir-out" value="out"><label for="f-dir-out" class="out">보냄 (출)</label>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="f-event">경조사</label>
+        <input id="f-event" list="dl-events" autocomplete="off" placeholder="예: 결혼식">
+      </div>
+      <div class="field">
+        <label for="f-date">날짜</label>
+        <input id="f-date" type="date">
+      </div>
+    </div>
+    <div class="field">
+      <label for="f-amount">금액 (원)</label>
+      <input id="f-amount" inputmode="numeric" autocomplete="off" placeholder="50,000">
+      <div class="quick" id="quick-amt">
+        <button type="button" data-v="30000">3만</button><button type="button" data-v="50000">5만</button><button type="button" data-v="100000">10만</button><button type="button" data-v="200000">20만</button><button type="button" data-v="300000">30만</button>
+      </div>
+    </div>
+    <div class="field">
+      <label for="f-memo">메모 (선택)</label>
+      <input id="f-memo" autocomplete="off" placeholder="예: 계좌이체">
+    </div>
+    <div class="err" id="f-err" hidden></div>
+    <div class="dlg-actions">
+      <button class="btn ghost" type="button" id="f-cancel">닫기</button>
+      <button class="btn" type="button" id="f-more">추가하고 계속 입력</button>
+      <button class="btn primary" type="submit">추가하고 저장</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-confirm">
+  <div class="dlg">
+    <h2 id="cf-title"></h2>
+    <p class="sub" id="cf-body"></p>
+    <div class="dlg-actions">
+      <button class="btn ghost" type="button" id="cf-no">취소</button>
+      <button class="btn primary" type="button" id="cf-yes">확인</button>
+    </div>
+  </div>
+</dialog>
+<datalist id="dl-names"></datalist>
+<datalist id="dl-events"></datalist>
+</template>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script type="application/json" id="ledger-data">{"groups":["회사","청구친구","보래친구","태화어린이집","처가집","우리집안"],"tx":[{"id":"t0","g":"회사","n":"강경희","d":"in","e":"결혼식","a":30000,"dt":"","m":"","nw":0},{"id":"t1","g":"회사","n":"강경희","d":"in","e":"부친상","a":30000,"dt":"","m":"","nw":0},{"id":"t2","g":"회사","n":"강병규","d":"in","e":"결혼식","a":50000,"dt":"","m":"","nw":0},{"id":"t3","g":"회사","n":"강병규","d":"in","e":"환이 돌","a":50000,"dt":"","m":"","nw":0},{"id":"t4","g":"회사","n":"강병규","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t5","g":"회사","n":"강병규","d":"out","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t6","g":"회사","n":"강병규","d":"out","e":"모친상","a":50000,"dt":"","m":"","nw":0},{"id":"t7","g":"회사","n":"권기연","d":"in","e":"결혼식","a":30000,"dt":"","m":"","nw":0},{"id":"t8","g":"회사","n":"권기연","d":"in","e":"부친상","a":30000,"dt":"","m":"","nw":0},{"id":"t9","g":"회사","n":"권기연","d":"out","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t10","g":"회사","n":"권기성","d":"out","e":"본인결혼","a":300000,"dt":"","m":"","nw":0},{"id":"t11","g":"회사","n":"권숙자","d":"in","e":"부친상","a":30000,"dt":"","m":"","nw":0},{"id":"t12","g":"회사","n":"권숙자","d":"out","e":"부친상","a":30000,"dt":"","m":"","nw":0},{"id":"t13","g":"회사","n":"권순천","d":"in","e":"결혼식","a":30000,"dt":"","m":"","nw":0},{"id":"t14","g":"회사","n":"권순천","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t15","g":"회사","n":"권순태","d":"in","e":"결혼식","a":30000,"dt":"","m":"","nw":0},{"id":"t16","g":"회사","n":"권순태","d":"in","e":"부친상","a":30000,"dt":"","m":"","nw":0},{"id":"t17","g":"회사","n":"권영두","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t18","g":"회사","n":"권영두","d":"out","e":"모친상","a":50000,"dt":"","m":"","nw":0},{"id":"t19","g":"회사","n":"권오선","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t20","g":"회사","n":"권오선","d":"out","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t21","g":"회사","n":"권오인","d":"in","e":"결혼식","a":30000,"dt":"","m":"","nw":0},{"id":"t22","g":"회사","n":"권오인","d":"in","e":"환이 돌","a":30000,"dt":"","m":"","nw":0},{"id":"t23","g":"회사","n":"권오인","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t24","g":"회사","n":"권오인","d":"out","e":"모친상","a":50000,"dt":"","m":"","nw":0},{"id":"t25","g":"회사","n":"권정국","d":"in","e":"결혼식","a":30000,"dt":"","m":"","nw":0},{"id":"t26","g":"회사","n":"권정국","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t27","g":"회사","n":"권정국","d":"out","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t28","g":"회사","n":"권정남","d":"in","e":"결혼식","a":30000,"dt":"","m":"","nw":0},{"id":"t29","g":"회사","n":"권정남","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t30","g":"회사","n":"기술국일동","d":"in","e":"환이 돌","a":255000,"dt":"","m":"","nw":0},{"id":"t31","g":"회사","n":"기술국일동","d":"in","e":"부친상","a":500000,"dt":"","m":"","nw":0},{"id":"t32","g":"회사","n":"기술인협회","d":"in","e":"부친상","a":100000,"dt":"","m":"","nw":0},{"id":"t33","g":"회사","n":"김건엽","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t34","g":"회사","n":"김경환","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t35","g":"회사","n":"김경환","d":"out","e":"자녀결혼","a":50000,"dt":"","m":"","nw":0},{"id":"t36","g":"회사","n":"김구한","d":"in","e":"결혼식","a":50000,"dt":"","m":"","nw":0},{"id":"t37","g":"회사","n":"김구한","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t38","g":"회사","n":"김구한","d":"out","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t39","g":"회사","n":"김구한","d":"out","e":"본인결혼","a":50000,"dt":"","m":"","nw":0},{"id":"t40","g":"회사","n":"김기만","d":"out","e":"모친상","a":50000,"dt":"","m":"","nw":0},{"id":"t41","g":"회사","n":"김기한","d":"in","e":"결혼식","a":100000,"dt":"","m":"","nw":0},{"id":"t42","g":"회사","n":"김도영","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t43","g":"회사","n":"김도영","d":"out","e":"본인상","a":50000,"dt":"","m":"","nw":0},{"id":"t44","g":"회사","n":"김동섭","d":"in","e":"결혼식","a":30000,"dt":"","m":"","nw":0},{"id":"t45","g":"회사","n":"김동섭","d":"in","e":"부친상","a":30000,"dt":"","m":"","nw":0},{"id":"t46","g":"회사","n":"김동섭","d":"out","e":"자녀결혼","a":50000,"dt":"","m":"","nw":0},{"id":"t47","g":"회사","n":"김동섭","d":"out","e":"기타","a":50000,"dt":"","m":"","nw":0},{"id":"t48","g":"회사","n":"김미영","d":"in","e":"결혼식","a":30000,"dt":"","m":"","nw":0},{"id":"t49","g":"회사","n":"김민화","d":"in","e":"결혼식","a":30000,"dt":"","m":"","nw":0},{"id":"t50","g":"회사","n":"김영교","d":"in","e":"결혼식","a":30000,"dt":"","m":"","nw":0},{"id":"t51","g":"회사","n":"김영교","d":"in","e":"부친상","a":30000,"dt":"","m":"","nw":0},{"id":"t52","g":"회사","n":"김영균","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t53","g":"회사","n":"김영균","d":"out","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t54","g":"회사","n":"김원태","d":"in","e":"결혼식","a":30000,"dt":"","m":"","nw":0},{"id":"t55","g":"회사","n":"김원태","d":"in","e":"부친상","a":30000,"dt":"","m":"","nw":0},{"id":"t56","g":"회사","n":"김원태","d":"out","e":"모친상","a":50000,"dt":"","m":"","nw":0},{"id":"t57","g":"회사","n":"김재원","d":"in","e":"결혼식","a":50000,"dt":"","m":"","nw":0},{"id":"t58","g":"회사","n":"김재원","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t59","g":"회사","n":"김재원","d":"out","e":"자녀결혼","a":50000,"dt":"","m":"","nw":0},{"id":"t60","g":"회사","n":"김종진","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t61","g":"회사","n":"김종진","d":"out","e":"본인상","a":50000,"dt":"","m":"","nw":0},{"id":"t62","g":"회사","n":"김중화","d":"in","e":"결혼식","a":30000,"dt":"","m":"","nw":0},{"id":"t63","g":"회사","n":"김지연","d":"in","e":"결혼식","a":50000,"dt":"","m":"","nw":0},{"id":"t64","g":"회사","n":"김지용","d":"out","e":"기타","a":50000,"dt":"","m":"","nw":0},{"id":"t65","g":"회사","n":"김창윤","d":"in","e":"결혼식","a":30000,"dt":"","m":"","nw":0},{"id":"t66","g":"회사","n":"김창윤","d":"in","e":"부친상","a":30000,"dt":"","m":"","nw":0},{"id":"t67","g":"회사","n":"김창윤","d":"out","e":"모친상","a":50000,"dt":"","m":"","nw":0},{"id":"t68","g":"회사","n":"김혁기","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t69","g":"회사","n":"김혁기","d":"out","e":"자녀결혼","a":50000,"dt":"","m":"","nw":0},{"id":"t70","g":"회사","n":"김형래","d":"in","e":"결혼식","a":30000,"dt":"","m":"","nw":0},{"id":"t71","g":"회사","n":"김형래","d":"in","e":"부친상","a":30000,"dt":"","m":"","nw":0},{"id":"t72","g":"회사","n":"남사장","d":"out","e":"모친상","a":50000,"dt":"","m":"","nw":0},{"id":"t73","g":"회사","n":"남재춘","d":"in","e":"결혼식","a":30000,"dt":"","m":"","nw":0},{"id":"t74","g":"회사","n":"남재춘","d":"in","e":"부친상","a":30000,"dt":"","m":"","nw":0},{"id":"t75","g":"회사","n":"노성희","d":"in","e":"결혼식","a":30000,"dt":"","m":"","nw":0},{"id":"t76","g":"회사","n":"노성희","d":"out","e":"기타","a":30000,"dt":"","m":"","nw":0},{"id":"t77","g":"회사","n":"노희철","d":"in","e":"결혼식","a":30000,"dt":"","m":"","nw":0},{"id":"t78","g":"회사","n":"노희철","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t79","g":"회사","n":"류인식","d":"in","e":"결혼식","a":30000,"dt":"","m":"","nw":0},{"id":"t80","g":"회사","n":"류인식","d":"in","e":"환이 돌","a":50000,"dt":"","m":"","nw":0},{"id":"t81","g":"회사","n":"류인식","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t82","g":"회사","n":"류인식","d":"out","e":"모친상","a":50000,"dt":"","m":"","nw":0},{"id":"t83","g":"회사","n":"류재식","d":"in","e":"결혼식","a":50000,"dt":"","m":"","nw":0},{"id":"t84","g":"회사","n":"류재식","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t85","g":"회사","n":"류재식","d":"out","e":"자녀결혼","a":50000,"dt":"","m":"","nw":0},{"id":"t86","g":"회사","n":"류재식","d":"out","e":"자녀결혼2","a":50000,"dt":"","m":"","nw":0},{"id":"t87","g":"회사","n":"문경대","d":"in","e":"결혼식","a":30000,"dt":"","m":"","nw":0},{"id":"t88","g":"회사","n":"문경대","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t89","g":"회사","n":"문경대","d":"out","e":"부친상","a":30000,"dt":"","m":"","nw":0},{"id":"t90","g":"회사","n":"문경대","d":"out","e":"자녀결혼","a":50000,"dt":"","m":"","nw":0},{"id":"t91","g":"회사","n":"박균득","d":"in","e":"결혼식","a":30000,"dt":"","m":"","nw":0},{"id":"t92","g":"회사","n":"박균득","d":"in","e":"부친상","a":30000,"dt":"","m":"","nw":0},{"id":"t93","g":"회사","n":"박균득","d":"out","e":"기타","a":50000,"dt":"","m":"","nw":0},{"id":"t94","g":"회사","n":"박돌수","d":"in","e":"결혼식","a":30000,"dt":"","m":"","nw":0},{"id":"t95","g":"회사","n":"박돌수","d":"out","e":"모친상","a":30000,"dt":"","m":"","nw":0},{"id":"t96","g":"회사","n":"박보경","d":"in","e":"결혼식","a":50000,"dt":"","m":"","nw":0},{"id":"t97","g":"회사","n":"박보경","d":"out","e":"기타","a":50000,"dt":"","m":"","nw":0},{"id":"t98","g":"회사","n":"박은영","d":"in","e":"결혼식","a":30000,"dt":"","m":"","nw":0},{"id":"t99","g":"회사","n":"박재완","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t100","g":"회사","n":"박재완","d":"out","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t101","g":"회사","n":"박종선","d":"in","e":"결혼식","a":30000,"dt":"","m":"","nw":0},{"id":"t102","g":"회사","n":"박종선","d":"in","e":"환이 돌","a":50000,"dt":"","m":"","nw":0},{"id":"t103","g":"회사","n":"박종선","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t104","g":"회사","n":"박흔식","d":"in","e":"결혼식","a":30000,"dt":"","m":"","nw":0},{"id":"t105","g":"회사","n":"박흔식","d":"in","e":"부친상","a":30000,"dt":"","m":"","nw":0},{"id":"t106","g":"회사","n":"박흔식","d":"out","e":"모친상","a":60000,"dt":"","m":"","nw":0},{"id":"t107","g":"회사","n":"배경탁","d":"in","e":"결혼식","a":30000,"dt":"","m":"","nw":0},{"id":"t108","g":"회사","n":"배경탁","d":"in","e":"환이 돌","a":50000,"dt":"","m":"","nw":0},{"id":"t109","g":"회사","n":"배경탁","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t110","g":"회사","n":"배경탁","d":"out","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t111","g":"회사","n":"배경탁","d":"out","e":"본인결혼","a":50000,"dt":"","m":"","nw":0},{"id":"t112","g":"회사","n":"배경탁","d":"out","e":"기타","a":50000,"dt":"","m":"","nw":0},{"id":"t113","g":"회사","n":"백승고","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t114","g":"회사","n":"백승고","d":"out","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t115","g":"회사","n":"백승고","d":"out","e":"기타","a":50000,"dt":"","m":"","nw":0},{"id":"t116","g":"회사","n":"서규식","d":"in","e":"결혼식","a":30000,"dt":"","m":"","nw":0},{"id":"t117","g":"회사","n":"서규식","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t118","g":"회사","n":"서규식","d":"out","e":"모친상","a":50000,"dt":"","m":"","nw":0},{"id":"t119","g":"회사","n":"서규식","d":"out","e":"자녀결혼","a":50000,"dt":"","m":"","nw":0},{"id":"t120","g":"회사","n":"서현","d":"in","e":"환이 돌","a":30000,"dt":"","m":"","nw":0},{"id":"t121","g":"회사","n":"서현","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t122","g":"회사","n":"서현","d":"out","e":"부친상","a":100000,"dt":"","m":"","nw":0},{"id":"t123","g":"회사","n":"서현","d":"out","e":"기타","a":100000,"dt":"","m":"","nw":0},{"id":"t124","g":"회사","n":"성낙위","d":"in","e":"부친상","a":30000,"dt":"","m":"","nw":0},{"id":"t125","g":"회사","n":"성소선","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t126","g":"회사","n":"손인수","d":"in","e":"결혼식","a":50000,"dt":"","m":"","nw":0},{"id":"t127","g":"회사","n":"손인수","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t128","g":"회사","n":"손인수","d":"out","e":"모친상","a":50000,"dt":"","m":"","nw":0},{"id":"t129","g":"회사","n":"신혁극","d":"in","e":"결혼식","a":30000,"dt":"","m":"","nw":0},{"id":"t130","g":"회사","n":"신혁극","d":"in","e":"부친상","a":30000,"dt":"","m":"","nw":0},{"id":"t131","g":"회사","n":"신혁극","d":"out","e":"부친상","a":30000,"dt":"","m":"","nw":0},{"id":"t132","g":"회사","n":"신혁극","d":"out","e":"자녀결혼","a":50000,"dt":"","m":"","nw":0},{"id":"t133","g":"회사","n":"안동mbc","d":"in","e":"부친상","a":1000000,"dt":"","m":"","nw":0},{"id":"t134","g":"회사","n":"안상준","d":"out","e":"본인결혼","a":50000,"dt":"","m":"","nw":0},{"id":"t135","g":"회사","n":"안상철(안내실)","d":"out","e":"모친상","a":50000,"dt":"","m":"","nw":0},{"id":"t136","g":"회사","n":"엄지원","d":"out","e":"기타","a":50000,"dt":"","m":"","nw":0},{"id":"t137","g":"회사","n":"오동규","d":"in","e":"결혼식","a":30000,"dt":"","m":"","nw":0},{"id":"t138","g":"회사","n":"오동규","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t139","g":"회사","n":"오동규","d":"out","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t140","g":"회사","n":"오동규","d":"out","e":"기타","a":50000,"dt":"","m":"","nw":0},{"id":"t141","g":"회사","n":"오영섭","d":"in","e":"결혼식","a":50000,"dt":"","m":"","nw":0},{"id":"t142","g":"회사","n":"오영섭","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t143","g":"회사","n":"오영섭","d":"out","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t144","g":"회사","n":"원종락","d":"in","e":"결혼식","a":30000,"dt":"","m":"","nw":0},{"id":"t145","g":"회사","n":"원종락","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t146","g":"회사","n":"원종락","d":"out","e":"모친상","a":30000,"dt":"","m":"","nw":0},{"id":"t147","g":"회사","n":"원종락","d":"out","e":"자녀결혼","a":50000,"dt":"","m":"","nw":0},{"id":"t148","g":"회사","n":"유근정","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t149","g":"회사","n":"유운선","d":"in","e":"결혼식","a":30000,"dt":"","m":"","nw":0},{"id":"t150","g":"회사","n":"유운선","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t151","g":"회사","n":"유운선","d":"out","e":"모친상","a":50000,"dt":"","m":"","nw":0},{"id":"t152","g":"회사","n":"윤용식","d":"in","e":"결혼식","a":50000,"dt":"","m":"","nw":0},{"id":"t153","g":"회사","n":"윤용식","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t154","g":"회사","n":"윤용식","d":"out","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t155","g":"회사","n":"윤용식","d":"out","e":"모친상","a":50000,"dt":"","m":"","nw":0},{"id":"t156","g":"회사","n":"이경민","d":"in","e":"환이 돌","a":30000,"dt":"","m":"","nw":0},{"id":"t157","g":"회사","n":"이기철","d":"in","e":"부친상","a":30000,"dt":"","m":"","nw":0},{"id":"t158","g":"회사","n":"이동수","d":"in","e":"결혼식","a":50000,"dt":"","m":"","nw":0},{"id":"t159","g":"회사","n":"이동수","d":"in","e":"부친상","a":30000,"dt":"","m":"","nw":0},{"id":"t160","g":"회사","n":"이동수","d":"out","e":"모친상","a":50000,"dt":"","m":"","nw":0},{"id":"t161","g":"회사","n":"이동학","d":"in","e":"결혼식","a":50000,"dt":"","m":"","nw":0},{"id":"t162","g":"회사","n":"이동학","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t163","g":"회사","n":"이동학","d":"out","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t164","g":"회사","n":"이도은","d":"out","e":"본인결혼","a":100000,"dt":"","m":"","nw":0},{"id":"t165","g":"회사","n":"이도은","d":"out","e":"기타","a":50000,"dt":"","m":"","nw":0},{"id":"t166","g":"회사","n":"이무형","d":"in","e":"결혼식","a":50000,"dt":"","m":"","nw":0},{"id":"t167","g":"회사","n":"이무형","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t168","g":"회사","n":"이무형","d":"out","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t169","g":"회사","n":"이무형","d":"out","e":"모친상","a":50000,"dt":"","m":"","nw":0},{"id":"t170","g":"회사","n":"이영직","d":"out","e":"기타","a":50000,"dt":"","m":"","nw":0},{"id":"t171","g":"회사","n":"이용하","d":"in","e":"결혼식","a":30000,"dt":"","m":"","nw":0},{"id":"t172","g":"회사","n":"이용하","d":"out","e":"부친상","a":30000,"dt":"","m":"","nw":0},{"id":"t173","g":"회사","n":"이정희","d":"in","e":"결혼식","a":30000,"dt":"","m":"","nw":0},{"id":"t174","g":"회사","n":"이정희","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t175","g":"회사","n":"이정희","d":"out","e":"자녀결혼","a":50000,"dt":"","m":"","nw":0},{"id":"t176","g":"회사","n":"이정희","d":"out","e":"기타","a":50000,"dt":"","m":"","nw":0},{"id":"t177","g":"회사","n":"이종식","d":"in","e":"결혼식","a":30000,"dt":"","m":"","nw":0},{"id":"t178","g":"회사","n":"이종식","d":"in","e":"부친상","a":30000,"dt":"","m":"","nw":0},{"id":"t179","g":"회사","n":"이종식","d":"out","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t180","g":"회사","n":"이지원","d":"out","e":"기타","a":50000,"dt":"","m":"","nw":0},{"id":"t181","g":"회사","n":"이진수","d":"out","e":"기타","a":50000,"dt":"","m":"","nw":0},{"id":"t182","g":"회사","n":"이호영","d":"in","e":"결혼식","a":30000,"dt":"","m":"","nw":0},{"id":"t183","g":"회사","n":"이호영","d":"in","e":"부친상","a":30000,"dt":"","m":"","nw":0},{"id":"t184","g":"회사","n":"이호영","d":"out","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t185","g":"회사","n":"임병근","d":"in","e":"결혼식","a":30000,"dt":"","m":"","nw":0},{"id":"t186","g":"회사","n":"임병근","d":"in","e":"부친상","a":30000,"dt":"","m":"","nw":0},{"id":"t187","g":"회사","n":"임유주","d":"in","e":"결혼식","a":30000,"dt":"","m":"","nw":0},{"id":"t188","g":"회사","n":"임유주","d":"in","e":"부친상","a":30000,"dt":"","m":"","nw":0},{"id":"t189","g":"회사","n":"임유주","d":"out","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t190","g":"회사","n":"장봉근","d":"out","e":"기타","a":50000,"dt":"","m":"","nw":0},{"id":"t191","g":"회사","n":"장혁만","d":"in","e":"결혼식","a":50000,"dt":"","m":"","nw":0},{"id":"t192","g":"회사","n":"장혁만","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t193","g":"회사","n":"장혁만","d":"out","e":"자녀결혼","a":50000,"dt":"","m":"","nw":0},{"id":"t194","g":"회사","n":"장혁만","d":"out","e":"기타","a":50000,"dt":"","m":"","nw":0},{"id":"t195","g":"회사","n":"정동원","d":"in","e":"결혼식","a":50000,"dt":"","m":"","nw":0},{"id":"t196","g":"회사","n":"정동원","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t197","g":"회사","n":"정동원","d":"out","e":"모친상","a":50000,"dt":"","m":"","nw":0},{"id":"t198","g":"회사","n":"정동원","d":"out","e":"기타","a":50000,"dt":"","m":"","nw":0},{"id":"t199","g":"회사","n":"정윤호","d":"in","e":"결혼식","a":30000,"dt":"","m":"","nw":0},{"id":"t200","g":"회사","n":"정윤호","d":"in","e":"부친상","a":30000,"dt":"","m":"","nw":0},{"id":"t201","g":"회사","n":"정윤호","d":"out","e":"모친상","a":50000,"dt":"","m":"","nw":0},{"id":"t202","g":"회사","n":"조동진","d":"in","e":"결혼식","a":30000,"dt":"","m":"","nw":0},{"id":"t203","g":"회사","n":"조동진","d":"in","e":"부친상","a":30000,"dt":"","m":"","nw":0},{"id":"t204","g":"회사","n":"조동진","d":"out","e":"자녀결혼","a":50000,"dt":"","m":"","nw":0},{"id":"t205","g":"회사","n":"조승묵","d":"in","e":"결혼식","a":50000,"dt":"","m":"","nw":0},{"id":"t206","g":"회사","n":"조승묵","d":"in","e":"부친상","a":100000,"dt":"","m":"","nw":0},{"id":"t207","g":"회사","n":"조현상","d":"in","e":"결혼식","a":30000,"dt":"","m":"","nw":0},{"id":"t208","g":"회사","n":"조현상","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t209","g":"회사","n":"조현상","d":"out","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t210","g":"회사","n":"조현상","d":"out","e":"자녀결혼","a":50000,"dt":"","m":"","nw":0},{"id":"t211","g":"회사","n":"조현상","d":"out","e":"자녀결혼2","a":50000,"dt":"","m":"","nw":0},{"id":"t212","g":"회사","n":"진경남","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t213","g":"회사","n":"진풍길","d":"in","e":"결혼식","a":30000,"dt":"","m":"","nw":0},{"id":"t214","g":"회사","n":"진풍길","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t215","g":"회사","n":"최병창","d":"in","e":"부친상","a":30000,"dt":"","m":"","nw":0},{"id":"t216","g":"회사","n":"최병창","d":"out","e":"자녀결혼","a":30000,"dt":"","m":"","nw":0},{"id":"t217","g":"회사","n":"최영식","d":"in","e":"결혼식","a":30000,"dt":"","m":"","nw":0},{"id":"t218","g":"회사","n":"최영식","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t219","g":"회사","n":"최영식","d":"out","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t220","g":"회사","n":"최영식","d":"out","e":"모친상","a":30000,"dt":"","m":"","nw":0},{"id":"t221","g":"회사","n":"최재훈","d":"out","e":"기타","a":50000,"dt":"","m":"","nw":0},{"id":"t222","g":"회사","n":"최종태","d":"in","e":"결혼식","a":30000,"dt":"","m":"","nw":0},{"id":"t223","g":"회사","n":"최종태","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t224","g":"회사","n":"최종태","d":"out","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t225","g":"회사","n":"태숙혜","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t226","g":"회사","n":"한두환","d":"out","e":"기타","a":50000,"dt":"","m":"","nw":0},{"id":"t227","g":"회사","n":"허환구","d":"in","e":"결혼식","a":50000,"dt":"","m":"","nw":0},{"id":"t228","g":"회사","n":"허환구","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t229","g":"회사","n":"허환구","d":"out","e":"기타","a":50000,"dt":"","m":"","nw":0},{"id":"t230","g":"회사","n":"홍석준","d":"in","e":"결혼식","a":50000,"dt":"","m":"","nw":0},{"id":"t231","g":"회사","n":"홍석준","d":"in","e":"환이 돌","a":100000,"dt":"","m":"","nw":0},{"id":"t232","g":"회사","n":"홍석준","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t233","g":"회사","n":"홍석준","d":"out","e":"기타","a":50000,"dt":"","m":"","nw":0},{"id":"t234","g":"회사","n":"홍순업","d":"in","e":"결혼식","a":50000,"dt":"","m":"","nw":0},{"id":"t235","g":"회사","n":"홍순업","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t236","g":"회사","n":"홍순업","d":"out","e":"모친상","a":50000,"dt":"","m":"","nw":0},{"id":"t237","g":"회사","n":"홍형철","d":"out","e":"기타","a":50000,"dt":"","m":"","nw":0},{"id":"t238","g":"회사","n":"황은수","d":"in","e":"결혼식","a":50000,"dt":"","m":"","nw":0},{"id":"t239","g":"회사","n":"황은수","d":"in","e":"환이 돌","a":50000,"dt":"","m":"","nw":0},{"id":"t240","g":"회사","n":"황은수","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t241","g":"회사","n":"황은수","d":"out","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t242","g":"회사","n":"황은수","d":"out","e":"모친상","a":50000,"dt":"","m":"","nw":0},{"id":"t243","g":"회사","n":"황은수","d":"out","e":"장인장모","a":30000,"dt":"","m":"","nw":0},{"id":"t244","g":"회사","n":"황재천","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t245","g":"회사","n":"황재천","d":"out","e":"자녀결혼","a":50000,"dt":"","m":"","nw":0},{"id":"t246","g":"회사","n":"황재형","d":"out","e":"본인결혼","a":100000,"dt":"","m":"","nw":0},{"id":"t247","g":"회사","n":"이유라","d":"out","e":"본인결혼","a":100000,"dt":"","m":"","nw":0},{"id":"t248","g":"청구친구","n":"이인권","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t249","g":"청구친구","n":"박형준","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t250","g":"청구친구","n":"박형준","d":"out","e":"부친상","a":100000,"dt":"","m":"","nw":0},{"id":"t251","g":"청구친구","n":"배영훈","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t252","g":"청구친구","n":"배영훈","d":"out","e":"부친상","a":100000,"dt":"","m":"","nw":0},{"id":"t253","g":"청구친구","n":"임영석","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t254","g":"청구친구","n":"정석희","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t255","g":"청구친구","n":"박재현","d":"in","e":"부친상","a":100000,"dt":"","m":"","nw":0},{"id":"t256","g":"청구친구","n":"권동휘","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t257","g":"청구친구","n":"최상호","d":"in","e":"부친상","a":100000,"dt":"","m":"","nw":0},{"id":"t258","g":"청구친구","n":"최상호","d":"out","e":"본인상","a":500000,"dt":"","m":"","nw":0},{"id":"t259","g":"청구친구","n":"박상욱","d":"out","e":"부친상","a":100000,"dt":"","m":"","nw":0},{"id":"t260","g":"청구친구","n":"박상욱","d":"out","e":"모친상","a":50000,"dt":"","m":"","nw":0},{"id":"t261","g":"청구친구","n":"이주형","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t262","g":"청구친구","n":"청구고","d":"in","e":"부친상","a":500000,"dt":"","m":"","nw":0},{"id":"t263","g":"보래친구","n":"김연희","d":"in","e":"환이 돌","a":50000,"dt":"","m":"","nw":0},{"id":"t264","g":"보래친구","n":"이진희","d":"in","e":"환이 돌","a":50000,"dt":"","m":"","nw":0},{"id":"t265","g":"보래친구","n":"이진희","d":"out","e":"기타","a":50000,"dt":"","m":"","nw":0},{"id":"t266","g":"보래친구","n":"조미정","d":"in","e":"환이 돌","a":100000,"dt":"","m":"","nw":0},{"id":"t267","g":"보래친구","n":"박선희","d":"out","e":"기타","a":50000,"dt":"","m":"","nw":0},{"id":"t268","g":"보래친구","n":"오상은기사","d":"out","e":"자녀결혼","a":50000,"dt":"","m":"","nw":0},{"id":"t269","g":"보래친구","n":"김숙경원장","d":"out","e":"자녀결혼","a":100000,"dt":"","m":"","nw":0},{"id":"t270","g":"태화어린이집","n":"권은숙","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t271","g":"태화어린이집","n":"안필주","d":"in","e":"부친상","a":30000,"dt":"","m":"","nw":0},{"id":"t272","g":"태화어린이집","n":"정현주","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t273","g":"태화어린이집","n":"지영희","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t274","g":"태화어린이집","n":"남혜순","d":"in","e":"부친상","a":30000,"dt":"","m":"","nw":0},{"id":"t275","g":"태화어린이집","n":"조현숙","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t276","g":"태화어린이집","n":"우정희","d":"in","e":"부친상","a":30000,"dt":"","m":"","nw":0},{"id":"t277","g":"태화어린이집","n":"김옥남","d":"in","e":"부친상","a":30000,"dt":"","m":"","nw":0},{"id":"t278","g":"태화어린이집","n":"김정희","d":"in","e":"부친상","a":50000,"dt":"","m":"","nw":0},{"id":"t279","g":"태화어린이집","n":"이진향","d":"in","e":"환이 돌","a":50000,"dt":"","m":"","nw":0},{"id":"t280","g":"태화어린이집","n":"이진향","d":"in","e":"부친상","a":30000,"dt":"","m":"","nw":0},{"id":"t281","g":"태화어린이집","n":"임미숙","d":"in","e":"부친상","a":30000,"dt":"","m":"","nw":0},{"id":"t282","g":"태화어린이집","n":"정미경","d":"in","e":"부친상","a":30000,"dt":"","m":"","nw":0},{"id":"t283","g":"태화어린이집","n":"이해정","d":"in","e":"부친상","a":30000,"dt":"","m":"","nw":0},{"id":"t284","g":"태화어린이집","n":"박종순","d":"in","e":"환이 돌","a":50000,"dt":"","m":"","nw":0},{"id":"t285","g":"태화어린이집","n":"박종순","d":"in","e":"부친상","a":30000,"dt":"","m":"","nw":0},{"id":"t286","g":"태화어린이집","n":"김인현","d":"in","e":"환이 돌","a":50000,"dt":"","m":"","nw":0},{"id":"t287","g":"태화어린이집","n":"김인현","d":"in","e":"부친상","a":30000,"dt":"","m":"","nw":0},{"id":"t288","g":"태화어린이집","n":"예전어린이집","d":"in","e":"환이 돌","a":100000,"dt":"","m":"","nw":0},{"id":"t289","g":"태화어린이집","n":"태화어린이집","d":"in","e":"환이 돌","a":270000,"dt":"","m":"","nw":0},{"id":"t290","g":"처가집","n":"울산숙모","d":"in","e":"환이 돌","a":100000,"dt":"","m":"","nw":0},{"id":"t291","g":"처가집","n":"안기동큰이모","d":"in","e":"환이 돌","a":100000,"dt":"","m":"","nw":0},{"id":"t292","g":"처가집","n":"조신영","d":"in","e":"환이 돌","a":200000,"dt":"","m":"","nw":0},{"id":"t293","g":"처가집","n":"장인어른","d":"in","e":"환이 돌","a":1000000,"dt":"","m":"","nw":0},{"id":"t294","g":"처가집","n":"임종상","d":"in","e":"환이 돌","a":100000,"dt":"","m":"","nw":0},{"id":"t295","g":"처가집","n":"외할아버지","d":"in","e":"환이 돌","a":100000,"dt":"","m":"","nw":0},{"id":"t296","g":"처가집","n":"조강영","d":"in","e":"환이 돌","a":100000,"dt":"","m":"","nw":0},{"id":"t297","g":"처가집","n":"조지영","d":"in","e":"환이 돌","a":100000,"dt":"","m":"","nw":0},{"id":"t298","g":"처가집","n":"처남","d":"in","e":"환이 돌","a":200000,"dt":"","m":"","nw":0},{"id":"t299","g":"처가집","n":"임대호","d":"in","e":"환이 돌","a":50000,"dt":"","m":"","nw":0},{"id":"t300","g":"처가집","n":"임성웅","d":"in","e":"환이 돌","a":50000,"dt":"","m":"","nw":0},{"id":"t301","g":"처가집","n":"임정하","d":"in","e":"환이 돌","a":50000,"dt":"","m":"","nw":0},{"id":"t302","g":"처가집","n":"임종길","d":"in","e":"환이 돌","a":200000,"dt":"","m":"","nw":0},{"id":"t303","g":"처가집","n":"임숙영","d":"in","e":"환이 돌","a":100000,"dt":"","m":"","nw":0},{"id":"t304","g":"우리집안","n":"누나","d":"in","e":"환이 돌","a":300000,"dt":"","m":"","nw":0},{"id":"t305","g":"우리집안","n":"형","d":"in","e":"환이 돌","a":200000,"dt":"","m":"","nw":0},{"id":"t306","g":"우리집안","n":"아버지","d":"in","e":"환이 돌","a":500000,"dt":"","m":"","nw":0},{"id":"t307","g":"우리집안","n":"세광커텐","d":"in","e":"환이 돌","a":50000,"dt":"","m":"","nw":0},{"id":"t308","g":"우리집안","n":"큰이모","d":"in","e":"환이 돌","a":100000,"dt":"","m":"","nw":0},{"id":"t309","g":"우리집안","n":"산격동큰엄마","d":"in","e":"환이 돌","a":100000,"dt":"","m":"","nw":0},{"id":"t310","g":"우리집안","n":"촌 큰엄마","d":"in","e":"환이 돌","a":100000,"dt":"","m":"","nw":0}],"updated":"2026-09-29"}</script>
+<script id="pg-script">
+(function(){
+  const HEAD = '<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>';
+  const XLSX_SRC = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+  const PENDING_KEY = 'bujo-pending-ops';
+  const FLASH_KEY = 'bujo-flash';
+
+  const SRC = {
+    style: document.getElementById('pg-style').textContent,
+    shell: document.getElementById('pg-shell').innerHTML,
+    script: document.getElementById('pg-script').textContent
+  };
+  let saved = JSON.parse(document.getElementById('ledger-data').textContent);
+  const LOCAL_KEY = 'bujo-local-ledger';
+  const inViewer = !!(window.claude && typeof window.claude.use === 'function');
+  // 컴퓨터에서 파일로 직접 열었을 때: 이 브라우저에 저장해 둔 장부를 불러옵니다.
+  if (!inViewer) { try { const l = JSON.parse(localStorage.getItem(LOCAL_KEY) || 'null'); if (l && Array.isArray(l.tx)) saved = l; } catch(e){} }
+
+  document.getElementById('app').appendChild(document.getElementById('pg-shell').content.cloneNode(true));
+  const $ = id => document.getElementById(id);
+  const use = n => (window.claude && typeof window.claude.use === 'function') ? window.claude.use(n) : Promise.resolve(null);
+
+  // ---------- state ----------
+  let ops = [];               // 저장 전 변경: {t:'add',tx} | {t:'del',id}
+  try { ops = JSON.parse(sessionStorage.getItem(PENDING_KEY) || '[]'); } catch(e) { ops = []; }
+
+  function current(){
+    const s = { groups: saved.groups.slice(), tx: saved.tx.slice(), updated: saved.updated };
+    ops.forEach(op => {
+      if (op.t === 'add') { s.tx.push(op.tx); if (!s.groups.includes(op.tx.g)) s.groups.push(op.tx.g); }
+      else if (op.t === 'del') s.tx = s.tx.filter(t => t.id !== op.id);
+    });
+    return s;
+  }
+  function stashOps(){ try { ops.length ? sessionStorage.setItem(PENDING_KEY, JSON.stringify(ops)) : sessionStorage.removeItem(PENDING_KEY); } catch(e){} }
+
+  const fmt = n => (n < 0 ? '-' : '') + Math.abs(n).toLocaleString('ko-KR');
+  const won = n => fmt(n) + '원';
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const today = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); };
+  const newId = () => 'n' + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+
+  function people(s){
+    const map = new Map();
+    s.tx.forEach(t => {
+      const k = t.g + '|' + t.n;
+      let p = map.get(k);
+      if (!p) { p = { key:k, name:t.n, group:t.g, in_total:0, out_total:0, tx:[], isNew:false }; map.set(k, p); }
+      if (t.d === 'in') p.in_total += t.a; else p.out_total += t.a;
+      if (t.nw) p.isNew = true;
+      p.tx.push(t);
+    });
+    const arr = [...map.values()];
+    arr.forEach(p => p.net = p.in_total - p.out_total);
+    return arr;
+  }
+
+  // ---------- render ----------
+  let activeTab = '전체', sortKey = null, sortDir = 1, openKey = null;
+
+  function render(){
+    const s = current();
+    const all = people(s);
+    const sumIn = all.reduce((a,p) => a + p.in_total, 0), sumOut = all.reduce((a,p) => a + p.out_total, 0);
+    $('asof').textContent = '부조금 현황판 · ' + (s.updated || '') + ' 기준';
+    $('tile-in').textContent = won(sumIn);
+    $('tile-out').textContent = won(sumOut);
+    const net = sumIn - sumOut;
+    $('tile-net').textContent = (net > 0 ? '+' : '') + won(net);
+    $('tile-net').className = 'value ' + (net >= 0 ? 'pos' : 'neg');
+
+    const newCount = all.filter(p => p.isNew).length;
+    const tabs = [['전체', all.length]];
+    if (newCount) tabs.push(['신규', newCount]);
+    s.groups.forEach(g => tabs.push([g, all.filter(p => p.group === g).length]));
+    if (!tabs.some(t => t[0] === activeTab)) activeTab = '전체';
+    $('tabs').innerHTML = tabs.map(([t,c]) => `<button type="button" class="tab${t==='신규'?' new-tab':''}${t===activeTab?' active':''}" data-tab="${esc(t)}">${esc(t)} (${c})</button>`).join('');
+
+    const q = $('search-input').value.trim();
+    let list = activeTab === '전체' ? all : activeTab === '신규' ? all.filter(p => p.isNew) : all.filter(p => p.group === activeTab);
+    const showGroup = activeTab === '전체' || activeTab === '신규';
+    if (q) {
+      const ql = q.toLowerCase();
+      list = list.filter(p => p.name.toLowerCase().includes(ql) || p.group.toLowerCase().includes(ql) || p.tx.some(t => (t.e||'').toLowerCase().includes(ql) || (t.m||'').toLowerCase().includes(ql)));
+    }
+    if (sortKey) list = [...list].sort((a,b) => typeof a[sortKey] === 'string' ? a[sortKey].localeCompare(b[sortKey],'ko')*sortDir : (a[sortKey]-b[sortKey])*sortDir);
+
+    const gIn = list.reduce((a,p) => a + p.in_total, 0), gOut = list.reduce((a,p) => a + p.out_total, 0);
+    $('group-title').textContent = q ? `“${q}” 검색 결과` + (activeTab !== '전체' ? ' · ' + activeTab : '') : activeTab;
+    $('group-count').textContent = list.length + '명';
+    const tot = gIn + gOut;
+    $('group-bar').innerHTML = `<div class="track"><div class="in" style="width:${tot?gIn/tot*100:50}%"></div><div class="out" style="width:${tot?gOut/tot*100:50}%"></div></div><div class="legend"><span class="in-label">받음 ${won(gIn)}</span><span class="out-label">보냄 ${won(gOut)}</span></div>`;
+
+    const cols = [['name','이름','l']].concat(showGroup ? [['group','그룹','l']] : [], [['in_total','받은 금액',''],['out_total','보낸 금액',''],['net','순액','']]);
+    $('thead-row').innerHTML = cols.map(([k,l,c]) => `<th class="${c}" data-key="${k}">${l}<span>${sortKey===k?(sortDir===1?' ▲':' ▼'):''}</span></th>`).join('');
+
+    const hl = txt => { const t = esc(txt); if (!q) return t; const i = txt.toLowerCase().indexOf(q.toLowerCase()); return i < 0 ? t : esc(txt.slice(0,i)) + '<mark>' + esc(txt.slice(i,i+q.length)) + '</mark>' + esc(txt.slice(i+q.length)); };
+    const pendingIds = new Set(ops.filter(o => o.t === 'add').map(o => o.tx.id));
+    $('tbody').innerHTML = list.map(p => {
+      const nc = p.net > 0 ? 'pos' : p.net < 0 ? 'neg' : 'zero';
+      const isOpen = openKey === p.key;
+      const row = `<tr class="person" data-key="${esc(p.key)}"><td class="name-cell">${hl(p.name)}${p.isNew?'<span class="badge">신규</span>':''}</td>${showGroup?`<td class="group-cell">${hl(p.group)}</td>`:''}<td class="in-val">${p.in_total?won(p.in_total):'-'}</td><td class="out-val">${p.out_total?won(p.out_total):'-'}</td><td class="${nc}">${p.net>0?'+':''}${won(p.net)}</td></tr>`;
+      if (!isOpen) return row;
+      const txs = p.tx.map(t => `<div class="tx"><span class="chip ${t.d}">${t.d==='in'?'받음':'보냄'} · ${esc(t.e||'기타')} <b>${won(t.a)}</b></span>${t.dt?`<span class="meta">${esc(t.dt)}</span>`:''}${t.m?`<span class="meta">${esc(t.m)}</span>`:''}${t.nw?'<span class="badge">신규</span>':''}${pendingIds.has(t.id)?'<span class="meta">· 저장 전</span>':''}<button type="button" class="del" data-del="${esc(t.id)}" aria-label="이 내역 삭제">삭제</button></div>`).join('');
+      return row + `<tr class="detail"><td colspan="${cols.length}"><div class="tx-list">${txs}</div><div class="detail-actions"><button type="button" class="btn" data-addfor="${esc(p.key)}">＋ ${esc(p.name)} 님 내역 추가</button></div></td></tr>`;
+    }).join('');
+
+    const gn = gIn - gOut;
+    $('tfoot-row').innerHTML = `<td class="name-cell">합계</td>${showGroup?'<td></td>':''}<td class="in-val">${won(gIn)}</td><td class="out-val">${won(gOut)}</td><td class="${gn>0?'pos':gn<0?'neg':'zero'}">${gn>0?'+':''}${won(gn)}</td>`;
+
+    $('table').hidden = list.length === 0;
+    $('empty-msg').hidden = list.length !== 0;
+    if (!list.length) $('empty-msg').innerHTML = q ? `“${esc(q)}”에 해당하는 사람이 없어요.<br><button type="button" class="btn primary" id="empty-add" style="margin-top:10px">＋ ${esc(q)} 님으로 새 내역 추가</button>` : '아직 내역이 없어요.';
+
+    $('dl-names').innerHTML = [...new Set(all.map(p => p.name))].map(n => `<option value="${esc(n)}">`).join('');
+    $('dl-events').innerHTML = [...new Set(s.tx.map(t => t.e).filter(Boolean))].map(e => `<option value="${esc(e)}">`).join('');
+
+    const nAdd = ops.filter(o => o.t === 'add').length, nDel = ops.filter(o => o.t === 'del').length;
+    $('savebar').hidden = ops.length === 0;
+    $('savebar-msg').textContent = '저장하지 않은 변경 ' + [nAdd ? `추가 ${nAdd}건` : '', nDel ? `삭제 ${nDel}건` : ''].filter(Boolean).join(', ');
+  }
+
+  // ---------- events ----------
+  $('search-input').addEventListener('input', () => { openKey = null; render(); });
+  $('tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return; activeTab = b.dataset.tab; sortKey = null; openKey = null; render(); });
+  $('thead-row').addEventListener('click', e => { const th = e.target.closest('th'); if (!th) return; const k = th.dataset.key; if (sortKey === k) sortDir *= -1; else { sortKey = k; sortDir = 1; } render(); });
+  $('tbody').addEventListener('click', e => {
+    const del = e.target.closest('[data-del]');
+    if (del) {
+      const id = del.dataset.del;
+      const t = current().tx.find(x => x.id === id);
+      confirmBox('내역 삭제', `${t.n} · ${t.d==='in'?'받음':'보냄'} · ${t.e||'기타'} ${won(t.a)} 내역을 삭제할까요? 「장부에 저장」을 눌러야 최종 반영됩니다.`, () => {
+        const addIdx = ops.findIndex(o => o.t === 'add' && o.tx.id === id);
+        if (addIdx >= 0) ops.splice(addIdx, 1); else ops.push({ t:'del', id });
+        stashOps(); render();
+      });
+      return;
+    }
+    const af = e.target.closest('[data-addfor]');
+    if (af) { const [g, n] = af.dataset.addfor.split('|'); openAdd({ name:n, group:g }); return; }
+    const tr = e.target.closest('tr.person');
+    if (tr) { openKey = openKey === tr.dataset.key ? null : tr.dataset.key; render(); }
+  });
+  $('empty-msg').addEventListener('click', e => { if (e.target.id === 'empty-add') openAdd({ name: $('search-input').value.trim() }); });
+
+  function toast(msg){ const t = $('toast'); t.textContent = msg; t.hidden = false; clearTimeout(toast._t); toast._t = setTimeout(() => t.hidden = true, 3500); }
+
+  let cfYes = null;
+  function confirmBox(title, body, onYes, yesLabel){ $('cf-title').textContent = title; $('cf-body').textContent = body; $('cf-yes').textContent = yesLabel || '확인'; cfYes = onYes; $('dlg-confirm').showModal(); }
+  $('cf-no').onclick = () => $('dlg-confirm').close();
+  $('cf-yes').onclick = () => { $('dlg-confirm').close(); const f = cfYes; cfYes = null; if (f) f(); };
+
+  // ---------- add dialog ----------
+  function fillGroups(sel){
+    const gs = current().groups;
+    $('f-group').innerHTML = gs.map(g => `<option>${esc(g)}</option>`).join('') + '<option value="__new">＋ 새 그룹…</option>';
+    $('f-group').value = sel && gs.includes(sel) ? sel : gs[0];
+    $('f-group-new').hidden = true;
+  }
+  function openAdd(pre){
+    pre = pre || {};
+    $('form-add').reset();
+    fillGroups(pre.group);
+    $('f-name').value = pre.name || '';
+    $('f-date').value = today();
+    $('f-err').hidden = true;
+    nameHint();
+    $('dlg-add').showModal();
+    setTimeout(() => (pre.name ? $('f-event') : $('f-name')).focus(), 30);
+  }
+  function nameHint(){
+    const n = $('f-name').value.trim();
+    const hint = $('f-name-hint');
+    const match = n ? people(current()).filter(p => p.name === n) : [];
+    if (match.length) {
+      const p = match.find(x => x.group === $('f-group').value) || match[0];
+      if (match.length === 1 || !match.some(x => x.group === $('f-group').value)) fillGroups(p.group);
+      hint.textContent = `기존 명단에 있어요 · ${p.group} · 받은 ${won(p.in_total)} / 보낸 ${won(p.out_total)}`;
+      hint.className = 'hint known';
+    } else { hint.textContent = n ? '명단에 없는 이름이에요. 신규로 등록됩니다.' : ''; hint.className = 'hint'; }
+  }
+  $('f-name').addEventListener('input', nameHint);
+  $('f-group').addEventListener('change', () => { $('f-group-new').hidden = $('f-group').value !== '__new'; if (!$('f-group-new').hidden) $('f-group-new').focus(); });
+  $('quick-amt').addEventListener('click', e => { const b = e.target.closest('button'); if (b) $('f-amount').value = Number(b.dataset.v).toLocaleString('ko-KR'); });
+  $('f-amount').addEventListener('input', () => { const v = parseAmount($('f-amount').value); if (v) $('f-amount').value = v.toLocaleString('ko-KR'); });
+  $('f-cancel').onclick = () => $('dlg-add').close();
+
+  function parseAmount(v){
+    if (typeof v === 'number') return Math.round(v);
+    v = String(v || '').replace(/[,\s원]/g, '');
+    const m = v.match(/^(\d+(?:\.\d+)?)만$/);
+    if (m) return Math.round(parseFloat(m[1]) * 10000);
+    const n = parseInt(v.replace(/[^\d]/g, ''), 10);
+    return isNaN(n) ? 0 : n;
+  }
+
+  function readForm(){
+    const name = $('f-name').value.trim();
+    const group = $('f-group').value === '__new' ? $('f-group-new').value.trim() : $('f-group').value;
+    const amount = parseAmount($('f-amount').value);
+    const err = !name ? '이름을 입력해 주세요.' : !group ? '그룹을 고르거나 새 그룹 이름을 입력해 주세요.' : !amount ? '금액을 입력해 주세요.' : '';
+    if (err) { $('f-err').textContent = err; $('f-err').hidden = false; return null; }
+    const known = people(current()).some(p => p.name === name && p.group === group);
+    return { id:newId(), g:group, n:name, d:document.querySelector('input[name="f-dir"]:checked').value, e:$('f-event').value.trim() || '기타', a:amount, dt:$('f-date').value || '', m:$('f-memo').value.trim(), nw: known ? 0 : 1 };
+  }
+  function stage(tx){ ops.push({ t:'add', tx }); stashOps(); openKey = tx.g + '|' + tx.n; }
+
+  $('f-more').onclick = () => {
+    const tx = readForm(); if (!tx) return;
+    stage(tx); render();
+    toast(`${tx.n} 님 ${won(tx.a)} 추가했어요. 계속 입력하세요.`);
+    const keep = { group: tx.g, dir: tx.d, ev: $('f-event').value, dt: $('f-date').value };
+    $('form-add').reset(); fillGroups(keep.group);
+    document.getElementById(keep.dir === 'in' ? 'f-dir-in' : 'f-dir-out').checked = true;
+    $('f-event').value = keep.ev; $('f-date').value = keep.dt; $('f-err').hidden = true; nameHint();
+    $('f-name').focus();
+  };
+  $('form-add').addEventListener('submit', e => {
+    e.preventDefault();
+    const tx = readForm(); if (!tx) return;
+    stage(tx); $('dlg-add').close(); render(); save();
+  });
+  $('btn-add').onclick = () => openAdd({ name: '' });
+
+  // ---------- save (republish page with new data) ----------
+  let artifactNs = null, readOnly = false;
+  use('artifact').then(a => { artifactNs = a; }).catch(() => {});
+
+  function buildDoc(state){
+    const data = JSON.stringify(state).replace(/</g, '\\u003c');
+    return HEAD + '<title>부조금 장부</title>\n<style id="pg-style">' + SRC.style + '</style>\n<meta name="claude:viewport-fit-sides" content="cover">\n<div id="app"></div>\n<template id="pg-shell">' + SRC.shell + '</template>\n<script src="' + XLSX_SRC + '"><\/script>\n<script type="application/json" id="ledger-data">' + data + '<\/script>\n<script id="pg-script">' + SRC.script + '<\/script>\n</body></html>';
+  }
+
+  async function save(){
+    if (!ops.length) return;
+    if (!artifactNs) artifactNs = await use('artifact').catch(() => null);
+    if (!inViewer) {
+      const s = current(); s.updated = today();
+      try { localStorage.setItem(LOCAL_KEY, JSON.stringify(s)); } catch(e) { toast('이 브라우저에는 저장할 수 없어요. 「엑셀로 받기」로 파일을 받아 두세요.'); return; }
+      const nAdd = ops.filter(o => o.t === 'add').length;
+      saved = s; ops = []; stashOps(); render();
+      toast(`이 컴퓨터에 저장했어요${nAdd ? ` (추가 ${nAdd}건)` : ''}. 엑셀 파일도 필요하면 「엑셀로 받기」를 눌러 주세요.`);
+      return;
+    }
+    if (!artifactNs || readOnly) { $('ro-notice').hidden = false; toast('이 화면에서는 저장할 수 없어요. 「엑셀로 받기」로 파일을 받아 두세요.'); return; }
+    const s = current(); s.updated = today();
+    $('btn-save').disabled = true; $('btn-save').textContent = '저장 중…';
+    const nAdd = ops.filter(o => o.t === 'add').length;
+    try { sessionStorage.setItem(FLASH_KEY, `장부에 저장했어요${nAdd ? ` (추가 ${nAdd}건)` : ''}.`); } catch(e){}
+    const pending = ops; ops = []; stashOps();
+    try {
+      await artifactNs.publish(buildDoc(s));
+      // 성공하면 새 버전으로 자동 새로고침됩니다.
+    } catch (err) {
+      try { sessionStorage.removeItem(FLASH_KEY); } catch(e){}
+      const code = err && err.code;
+      if (code === 'conflict') { ops = pending; stashOps(); try { sessionStorage.setItem(FLASH_KEY, '다른 곳에서 먼저 저장돼 새로 불러왔어요. 아래 「장부에 저장」을 한 번 더 눌러 주세요.'); } catch(e){} return; }
+      ops = pending; stashOps();
+      if (['not_writer','not_granted','not_declared','consent_required','capability_disabled','capability_removed'].includes(code)) { readOnly = true; $('ro-notice').hidden = false; toast('이 화면은 읽기 전용이라 저장되지 않았어요.'); }
+      else if (code === 'rate_limited') toast('저장이 너무 잦아요. 잠시 뒤 「장부에 저장」을 다시 눌러 주세요.');
+      else toast('저장하지 못했어요. 잠시 뒤 「장부에 저장」을 다시 눌러 주세요.');
+      $('btn-save').disabled = false; $('btn-save').textContent = '장부에 저장';
+      render();
+    }
+  }
+  $('btn-save').onclick = save;
+  $('btn-discard').onclick = () => confirmBox('변경 취소', '저장하지 않은 변경을 모두 지울까요?', () => { ops = []; stashOps(); render(); }, '모두 지우기');
+
+  // ---------- Excel export ----------
+  function workbook(){
+    const s = current(), all = people(s);
+    const wb = XLSX.utils.book_new();
+    const rows = s.tx.map(t => ({ '그룹':t.g, '이름':t.n, '구분':t.d==='in'?'받음':'보냄', '경조사':t.e, '금액':t.a, '날짜':t.dt, '메모':t.m, '신규':t.nw?'신규':'' }));
+    const ws1 = XLSX.utils.json_to_sheet(rows, { header:['그룹','이름','구분','경조사','금액','날짜','메모','신규'] });
+    ws1['!cols'] = [{wch:12},{wch:14},{wch:6},{wch:12},{wch:12},{wch:12},{wch:20},{wch:6}];
+    const ws2 = XLSX.utils.json_to_sheet(all.map(p => ({ '그룹':p.group, '이름':p.name, '받은 금액':p.in_total, '보낸 금액':p.out_total, '순액':p.net, '신규':p.isNew?'신규':'' })));
+    ws2['!cols'] = [{wch:12},{wch:14},{wch:12},{wch:12},{wch:12},{wch:6}];
+    const ws3 = XLSX.utils.json_to_sheet(s.groups.map(g => { const ps = all.filter(p => p.group === g); const i = ps.reduce((a,p)=>a+p.in_total,0), o = ps.reduce((a,p)=>a+p.out_total,0); return { '그룹':g, '인원':ps.length, '받은 금액':i, '보낸 금액':o, '순액':i-o }; }));
+    ws3['!cols'] = [{wch:14},{wch:6},{wch:12},{wch:12},{wch:12}];
+    XLSX.utils.book_append_sheet(wb, ws1, '전체내역');
+    XLSX.utils.book_append_sheet(wb, ws2, '사람별요약');
+    XLSX.utils.book_append_sheet(wb, ws3, '그룹별요약');
+    return XLSX.write(wb, { bookType:'xlsx', type:'array' });
+  }
+  $('btn-export').onclick = async () => {
+    if (typeof XLSX === 'undefined') { toast('엑셀 도구를 불러오지 못했어요. 페이지를 새로고침해 주세요.'); return; }
+    const fname = '부조금장부_' + today() + '.xlsx';
+    if (!inViewer) {
+      const url = URL.createObjectURL(new Blob([workbook()], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+      const a = document.createElement('a'); a.href = url; a.download = 'bujo_ledger_' + today() + '.xlsx'; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      toast('엑셀 파일을 다운로드 폴더에 저장했어요.'); return;
+    }
+    const dl = await use('downloads').catch(() => null);
+    if (!dl) { toast('이 화면에서는 파일을 받을 수 없어요. claude.ai에서 열어 주세요.'); return; }
+    try { await dl.save({ filename:fname, data:workbook() }); toast('엑셀 파일을 저장했어요.'); }
+    catch (err) { const c = err && err.code; if (c === 'declined') return; toast(c === 'rate_limited' ? '잠시 뒤 다시 눌러 주세요.' : '파일을 저장하지 못했어요.'); }
+  };
+
+  // ---------- Excel import ----------
+  const ALIAS = { n:['이름','성명','name'], g:['그룹','분류','관계','소속'], d:['구분','입출','방향','받음/보냄'], e:['경조사','행사','항목','내용'], a:['금액','부조금','액수','금액(원)'], dt:['날짜','일자'], m:['메모','비고'], nw:['신규','신규등록','신규여부'] };
+  function pick(row, key){ for (const k of Object.keys(row)) { const kk = k.replace(/\s/g,''); if (ALIAS[key].some(a => kk === a.replace(/\s/g,''))) return row[k]; } return ''; }
+  $('btn-import').onclick = () => { if (typeof XLSX === 'undefined') { toast('엑셀 도구를 불러오지 못했어요. 페이지를 새로고침해 주세요.'); return; } $('file-import').value = ''; $('file-import').click(); };
+  $('file-import').addEventListener('change', () => {
+    const f = $('file-import').files[0]; if (!f) return;
+    const rd = new FileReader();
+    rd.onload = () => {
+      let wb; try { wb = XLSX.read(new Uint8Array(rd.result), { type:'array', cellDates:true }); } catch(e) { toast('엑셀 파일을 읽지 못했어요.'); return; }
+      const sh = wb.Sheets['전체내역'] || wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sh, { defval:'' });
+      const s = current();
+      const keyOf = t => [t.g,t.n,t.d,t.e,t.a].join('|');
+      const have = new Set(s.tx.map(keyOf));
+      const knownPeople = new Set(s.tx.map(t => t.g + '|' + t.n));
+      const fresh = [];
+      let bad = 0;
+      rows.forEach(r => {
+        const n = String(pick(r,'n')).trim(), a = parseAmount(pick(r,'a'));
+        if (!n || !a) { bad++; return; }
+        const ds = String(pick(r,'d'));
+        let dt = pick(r,'dt'); if (dt instanceof Date) dt = dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
+        const t = { id:newId(), g:String(pick(r,'g')).trim() || '기타', n, d:/보|출|낸/.test(ds) ? 'out' : 'in', e:String(pick(r,'e')).trim() || '기타', a, dt:String(dt||''), m:String(pick(r,'m')).trim(), nw:0 };
+        if (have.has(keyOf(t))) return;
+        have.add(keyOf(t));
+        t.nw = (String(pick(r,'nw')).trim() || !knownPeople.has(t.g + '|' + t.n)) ? 1 : 0;
+        fresh.push(t);
+      });
+      if (!rows.length || (!fresh.length && bad === rows.length)) { confirmBox('불러올 내역을 찾지 못했어요', '첫 줄에 「이름」과 「금액」 칸 제목이 있어야 해요. 「그룹·구분(받음/보냄)·경조사·날짜·메모·신규」 칸도 있으면 함께 읽습니다. 「엑셀로 받기」로 받은 파일 형식 그대로 쓰시면 가장 정확해요.', null); return; }
+      if (!fresh.length) { toast('새로 추가할 내역이 없어요. 모두 이미 장부에 있어요.'); return; }
+      const nNew = new Set(fresh.filter(t => t.nw).map(t => t.g + '|' + t.n)).size;
+      confirmBox('엑셀에서 불러오기', `장부에 없는 내역 ${fresh.length}건을 찾았어요 (신규 인물 ${nNew}명${bad ? `, 이름이나 금액이 비어 건너뛴 줄 ${bad}개` : ''}). 추가한 뒤 바로 저장할까요?`, () => {
+        fresh.forEach(t => ops.push({ t:'add', tx:t })); stashOps(); activeTab = nNew ? '신규' : '전체'; render(); save();
+      }, '추가하고 저장');
+    };
+    rd.readAsArrayBuffer(f);
+  });
+
+  // ---------- boot ----------
+  try { const fl = sessionStorage.getItem(FLASH_KEY); if (fl) { sessionStorage.removeItem(FLASH_KEY); setTimeout(() => toast(fl), 50); } } catch(e){}
+  render();
+})();
+</script>
