@@ -255,7 +255,11 @@ dialog::backdrop{background:rgba(10,12,8,.45)}
     shell: document.getElementById('pg-shell').innerHTML,
     script: document.getElementById('pg-script').textContent
   };
-  const saved = JSON.parse(document.getElementById('ledger-data').textContent);
+  let saved = JSON.parse(document.getElementById('ledger-data').textContent);
+  const LOCAL_KEY = 'bujo-local-ledger';
+  const inViewer = !!(window.claude && typeof window.claude.use === 'function');
+  // 컴퓨터에서 파일로 직접 열었을 때: 이 브라우저에 저장해 둔 장부를 불러옵니다.
+  if (!inViewer) { try { const l = JSON.parse(localStorage.getItem(LOCAL_KEY) || 'null'); if (l && Array.isArray(l.tx)) saved = l; } catch(e){} }
 
   document.getElementById('app').appendChild(document.getElementById('pg-shell').content.cloneNode(true));
   const $ = id => document.getElementById(id);
@@ -475,6 +479,14 @@ dialog::backdrop{background:rgba(10,12,8,.45)}
   async function save(){
     if (!ops.length) return;
     if (!artifactNs) artifactNs = await use('artifact').catch(() => null);
+    if (!inViewer) {
+      const s = current(); s.updated = today();
+      try { localStorage.setItem(LOCAL_KEY, JSON.stringify(s)); } catch(e) { toast('이 브라우저에는 저장할 수 없어요. 「엑셀로 받기」로 파일을 받아 두세요.'); return; }
+      const nAdd = ops.filter(o => o.t === 'add').length;
+      saved = s; ops = []; stashOps(); render();
+      toast(`이 컴퓨터에 저장했어요${nAdd ? ` (추가 ${nAdd}건)` : ''}. 엑셀 파일도 필요하면 「엑셀로 받기」를 눌러 주세요.`);
+      return;
+    }
     if (!artifactNs || readOnly) { $('ro-notice').hidden = false; toast('이 화면에서는 저장할 수 없어요. 「엑셀로 받기」로 파일을 받아 두세요.'); return; }
     const s = current(); s.updated = today();
     $('btn-save').disabled = true; $('btn-save').textContent = '저장 중…';
@@ -517,9 +529,16 @@ dialog::backdrop{background:rgba(10,12,8,.45)}
   }
   $('btn-export').onclick = async () => {
     if (typeof XLSX === 'undefined') { toast('엑셀 도구를 불러오지 못했어요. 페이지를 새로고침해 주세요.'); return; }
+    const fname = '부조금장부_' + today() + '.xlsx';
+    if (!inViewer) {
+      const url = URL.createObjectURL(new Blob([workbook()], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+      const a = document.createElement('a'); a.href = url; a.download = 'bujo_ledger_' + today() + '.xlsx'; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      toast('엑셀 파일을 다운로드 폴더에 저장했어요.'); return;
+    }
     const dl = await use('downloads').catch(() => null);
     if (!dl) { toast('이 화면에서는 파일을 받을 수 없어요. claude.ai에서 열어 주세요.'); return; }
-    try { await dl.save({ filename:'부조금장부_' + today() + '.xlsx', data:workbook() }); toast('엑셀 파일을 저장했어요.'); }
+    try { await dl.save({ filename:fname, data:workbook() }); toast('엑셀 파일을 저장했어요.'); }
     catch (err) { const c = err && err.code; if (c === 'declined') return; toast(c === 'rate_limited' ? '잠시 뒤 다시 눌러 주세요.' : '파일을 저장하지 못했어요.'); }
   };
 
